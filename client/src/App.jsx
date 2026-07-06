@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import AliasSetup from './components/AliasSetup.jsx';
 import Chat from './components/Chat.jsx';
+import BoschHeader from './components/BoschHeader.jsx';
 
 export default function App() {
   const [alias, setAlias] = useState(localStorage.getItem('chatAlias') || '');
@@ -15,6 +16,15 @@ export default function App() {
     setAlias('');
   }
 
-  if (!alias) return <AliasSetup onAliasSet={handleAliasSet} />;
-  return <Chat alias={alias} onReset={handleReset} />;
+  return (
+    <div className="app-shell -dark-mode">
+      <BoschHeader />
+      <div className="app-content">
+        {!alias
+          ? <AliasSetup onAliasSet={handleAliasSet} />
+          : <Chat alias={alias} onReset={handleReset} />
+        }
+      </div>
+    </div>
+  );
 }
