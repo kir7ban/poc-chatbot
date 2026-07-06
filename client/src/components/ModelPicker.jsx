@@ -1,7 +1,7 @@
 const MODELS = [
-  { id: 'claude', label: 'Claude Sonnet 4.6', provider: 'Anthropic' },
-  { id: 'openai', label: 'GPT-4o', provider: 'OpenAI' },
-  { id: 'gemini', label: 'Gemini 1.5 Flash', provider: 'Google' },
+  { id: 'claude', label: 'Claude Sonnet 4.6', provider: 'Anthropic via AI Foundry' },
+  { id: 'openai', label: 'GPT-4o', provider: 'Azure OpenAI' },
+  { id: 'llama', label: 'Llama 3.3 70B', provider: 'Meta via AI Foundry' },
 ];
 
 export default function ModelPicker({ model, onModelChange }) {

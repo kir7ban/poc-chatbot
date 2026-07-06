@@ -4,9 +4,9 @@ import MessageInput from './MessageInput.jsx';
 import { sendMessage, loadHistory } from '../api/chat.js';
 
 const MODEL_LABELS = {
-  claude: 'Claude',
+  claude: 'Claude Sonnet 4.6',
   openai: 'GPT-4o',
-  gemini: 'Gemini',
+  llama: 'Llama 3.3 70B',
 };
 
 export default function Chat({ alias, onReset }) {

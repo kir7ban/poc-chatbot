@@ -1,47 +1,50 @@
 import { Router } from 'express';
-import ModelClient, { isUnexpected } from '@azure-rest/ai-inference';
-import { AzureKeyCredential } from '@azure/core-auth';
+import OpenAI, { AzureOpenAI } from 'openai';
 import { getConversation, saveConversation } from '../db/cosmos.js';
 
 const router = Router();
 
 const CONTEXT_WINDOW = 20;
 
-const MODEL_CONFIG = {
+function foundryClient(endpoint, key) {
+  return new OpenAI({
+    baseURL: endpoint.replace(/\/?$/, '/v1'),
+    apiKey: key,
+    defaultHeaders: { 'api-key': key },
+  });
+}
+
+const MODELS = {
   claude: {
-    endpoint: process.env.AZURE_AI_ENDPOINT,
-    key: process.env.AZURE_AI_KEY,
-    deployment: process.env.CLAUDE_DEPLOYMENT || 'claude-3-5-sonnet',
+    getClient: () => foundryClient(process.env.AZURE_CLAUDE_ENDPOINT, process.env.AZURE_CLAUDE_KEY),
+    deployment: process.env.CLAUDE_DEPLOYMENT || 'claude-sonnet-4-6',
+    label: 'Claude Sonnet 4.6',
   },
   openai: {
-    endpoint: process.env.AZURE_AI_ENDPOINT,
-    key: process.env.AZURE_AI_KEY,
+    getClient: () => new AzureOpenAI({
+      endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+      apiKey: process.env.AZURE_OPENAI_KEY,
+      apiVersion: '2024-10-21',
+    }),
     deployment: process.env.OPENAI_DEPLOYMENT || 'gpt-4o',
+    label: 'GPT-4o',
   },
-  gemini: {
-    endpoint: process.env.AZURE_AI_ENDPOINT,
-    key: process.env.AZURE_AI_KEY,
-    deployment: process.env.GEMINI_DEPLOYMENT || 'gemini-1-5-flash',
+  llama: {
+    getClient: () => foundryClient(process.env.AZURE_LLAMA_ENDPOINT, process.env.AZURE_LLAMA_KEY),
+    deployment: process.env.LLAMA_DEPLOYMENT || 'llama-3-3-70b',
+    label: 'Llama 3.3 70B',
   },
 };
 
 async function callModel(modelKey, messages) {
-  const { endpoint, key, deployment } = MODEL_CONFIG[modelKey];
-  const client = ModelClient(endpoint, new AzureKeyCredential(key));
-
-  const response = await client.path('/chat/completions').post({
-    body: {
-      model: deployment,
-      messages,
-      max_tokens: 2048,
-    },
+  const { getClient, deployment } = MODELS[modelKey];
+  const client = getClient();
+  const response = await client.chat.completions.create({
+    model: deployment,
+    messages,
+    max_tokens: 2048,
   });
-
-  if (isUnexpected(response)) {
-    throw new Error(`AI Foundry error: ${response.body.error?.message || response.status}`);
-  }
-
-  return response.body.choices[0].message.content;
+  return response.choices[0].message.content;
 }
 
 router.post('/', async (req, res) => {
@@ -51,8 +54,8 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'alias, message, and model are required' });
   }
 
-  if (!MODEL_CONFIG[model]) {
-    return res.status(400).json({ error: `Invalid model. Use: ${Object.keys(MODEL_CONFIG).join(', ')}` });
+  if (!MODELS[model]) {
+    return res.status(400).json({ error: `Invalid model. Use: ${Object.keys(MODELS).join(', ')}` });
   }
 
   try {
@@ -70,8 +73,8 @@ router.post('/', async (req, res) => {
 
     res.json({ reply, model });
   } catch (err) {
-    console.error('Chat error:', err);
-    res.status(500).json({ error: err.message || 'Failed to process message' });
+    console.error('Chat error:', err?.message || err);
+    res.status(500).json({ error: err?.message || 'Failed to process message' });
   }
 });
 
