@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
-    "build": "cd client && npm install && npm run build"
+    "build": "cd client && npm install --include=dev && npm run build"
   },
   "dependencies": {
     "@azure/cosmos": "^4.0.0",
