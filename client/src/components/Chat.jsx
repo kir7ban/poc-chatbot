@@ -11,7 +11,7 @@ const MODEL_LABELS = {
 
 export default function Chat({ alias, onReset }) {
   const [messages, setMessages] = useState([]);
-  const [model, setModel] = useState('claude');
+  const [model, setModel] = useState('openai');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const bottomRef = useRef(null);
@@ -24,7 +24,12 @@ export default function Chat({ alias, onReset }) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+  }, [messages]);
+
+  function handleModelChange(next) {
+    setModel(next);
+    setError(null);
+  }
 
   async function handleSend(text) {
     setLoading(true);
@@ -49,7 +54,7 @@ export default function Chat({ alias, onReset }) {
           <span className="user-alias">{alias}</span>
           <button className="reset-btn" onClick={onReset}>Switch user</button>
         </div>
-        <ModelPicker model={model} onModelChange={setModel} />
+        <ModelPicker model={model} onModelChange={handleModelChange} />
       </aside>
 
       <main className="chat-main">
@@ -70,10 +75,19 @@ export default function Chat({ alias, onReset }) {
           {loading && (
             <div className="message assistant">
               <span className="model-badge">{MODEL_LABELS[model]}</span>
-              <div className="message-content typing">Thinking...</div>
+              <div className="message-content">
+                <span className="typing-dots">
+                  <span /><span /><span />
+                </span>
+              </div>
             </div>
           )}
-          {error && <div className="error-banner">{error}</div>}
+          {error && (
+            <div className="error-banner">
+              {error}
+              <button className="error-dismiss" onClick={() => setError(null)} aria-label="Dismiss">×</button>
+            </div>
+          )}
           <div ref={bottomRef} />
         </div>
         <MessageInput onSend={handleSend} disabled={loading} />
