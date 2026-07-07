@@ -4,14 +4,19 @@ import MessageInput from './MessageInput.jsx';
 import { sendMessage, loadHistory } from '../api/chat.js';
 
 const MODEL_LABELS = {
-  claude: 'Claude Sonnet 4.6',
-  openai: 'GPT-4o',
-  llama: 'Llama 3.3 70B',
+  'claude-sonnet-4-6': 'Claude Sonnet 4.6',
+  'claude-opus-4-6':   'Claude Opus 4.6',
+  'claude-haiku-4-5':  'Claude Haiku 4.5',
+  'gpt-5.5':           'GPT-5.5',
+  'gpt-5.4-mini':      'GPT-5.4 mini',
+  'DeepSeek-V4-Pro':   'DeepSeek V4 Pro',
+  'DeepSeek-V3.2':     'DeepSeek V3.2',
+  'DeepSeek-V4-Flash': 'DeepSeek V4 Flash',
 };
 
 export default function Chat({ alias, onReset }) {
   const [messages, setMessages] = useState([]);
-  const [model, setModel] = useState('openai');
+  const [model, setModel] = useState('claude-sonnet-4-6');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const bottomRef = useRef(null);

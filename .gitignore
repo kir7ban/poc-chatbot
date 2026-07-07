@@ -4,3 +4,4 @@ client/dist/
 .env
 deploy.zip
 *.log
+client/frontend.kit-npm-5.0.0/
