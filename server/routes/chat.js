@@ -37,10 +37,15 @@ const AZURE_MODELS = new Set([
 
 const ALL_MODELS = new Set([...CLAUDE_MODELS, ...AZURE_MODELS]);
 
+// Strip any extra fields (e.g. 'model') stored in Cosmos history — APIs only accept role + content
+function cleanMessages(messages) {
+  return messages.map(({ role, content }) => ({ role, content }));
+}
+
 async function callClaude(model, messages) {
   const response = await claudeClient.messages.create({
     model,
-    messages,
+    messages: cleanMessages(messages),
     max_tokens: 2048,
   });
   return response.content[0].text;
@@ -49,7 +54,7 @@ async function callClaude(model, messages) {
 async function callAzure(model, messages) {
   const response = await azureClient.chat.completions.create({
     model,
-    messages,
+    messages: cleanMessages(messages),
     max_tokens: 2048,
   });
   return response.choices[0].message.content;
