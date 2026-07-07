@@ -58,7 +58,7 @@ export default function Chat({ alias, onReset }) {
     setError(null);
     setMessages([]);
     loadConversation(conv.id)
-      .then(({ messages: msgs }) => setMessages(msgs))
+      .then(({ messages: msgs }) => setMessages(Array.isArray(msgs) ? msgs : []))
       .catch(() => setError('Could not load conversation.'));
   }
 

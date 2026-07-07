@@ -34,16 +34,17 @@ export async function upsertConversation(doc) {
 }
 
 // List all conversations for a user — metadata only, no messages payload
+// ORDER BY done in JS to avoid cross-partition composite index requirement in Cosmos
 export async function listConversations(alias) {
   const { resources } = await container.items.query(
     {
       query: `SELECT c.id, c.alias, c.title, c.createdAt, c.updatedAt, c.messageCount
-              FROM c WHERE c.alias = @alias ORDER BY c._ts DESC`,
+              FROM c WHERE c.alias = @alias`,
       parameters: [{ name: '@alias', value: alias }],
     },
     { enableCrossPartitionQuery: true }
   ).fetchAll();
-  return resources;
+  return resources.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 }
 
 // One-time migration: wrap old single-blob conversation (id = alias) into new schema
