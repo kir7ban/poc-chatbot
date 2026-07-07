@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import chatRouter from './routes/chat.js';
 import conversationsRouter from './routes/conversations.js';
+import conversationRouter from './routes/conversation.js';
 import { initDB } from './db/cosmos.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -12,8 +13,8 @@ const app = express();
 app.use(express.json());
 
 app.use('/api/chat', chatRouter);
-app.use('/api/conversations', conversationsRouter);   // GET /api/conversations/:alias
-app.use('/api/conversation', conversationsRouter);    // GET /api/conversation/:convId
+app.use('/api/conversations', conversationsRouter);  // GET /api/conversations/:alias  (list)
+app.use('/api/conversation', conversationRouter);    // GET /api/conversation/:convId  (single)
 
 const clientDist = path.join(__dirname, '../client/dist');
 app.use(express.static(clientDist));
