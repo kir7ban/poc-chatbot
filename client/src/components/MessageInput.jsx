@@ -98,6 +98,17 @@ export default function MessageInput({ onSend, disabled, model, onModelChange })
       )}
 
       <form className="message-input" onSubmit={handleSubmit}>
+        <textarea
+          ref={textareaRef}
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onInput={handleInput}
+          placeholder="Message… (Enter to send, Shift+Enter for new line)"
+          disabled={disabled}
+          rows={1}
+        />
+
         <button
           type="button"
           className="model-selector-btn"
@@ -111,17 +122,6 @@ export default function MessageInput({ onSend, disabled, model, onModelChange })
             <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-
-        <textarea
-          ref={textareaRef}
-          value={text}
-          onChange={e => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onInput={handleInput}
-          placeholder="Message… (Enter to send, Shift+Enter for new line)"
-          disabled={disabled}
-          rows={1}
-        />
 
         <button type="submit" disabled={!canSend} aria-label="Send message">
           Send

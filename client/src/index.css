@@ -433,7 +433,7 @@ body {
 .model-dropdown {
   position: absolute;
   bottom: calc(100% + 6px);
-  left: 2rem;
+  right: 2rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -567,6 +567,5 @@ body {
   .messages { padding: 1rem; }
   .message { max-width: 88%; }
   .message-input { padding: 0.5rem 1rem 0.75rem; }
-  .model-dropdown { left: 1rem; }
-  .model-dropdown { flex-direction: column; }
+  .model-dropdown { right: 1rem; flex-direction: column; }
 }
