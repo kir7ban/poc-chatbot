@@ -1,18 +1,10 @@
 import { Router } from 'express';
-import AnthropicFoundry from '@anthropic-ai/foundry-sdk';
 import { AzureOpenAI } from 'openai';
 import { getConversation, saveConversation } from '../db/cosmos.js';
 
 const router = Router();
 
 const CONTEXT_WINDOW = 20;
-
-// Claude via Anthropic Foundry SDK (services.ai.azure.com/anthropic)
-const claudeClient = new AnthropicFoundry({
-  apiKey: process.env.AZURE_AI_KEY,
-  baseURL: process.env.AZURE_CLAUDE_ENDPOINT,
-  apiVersion: '2023-06-01',
-});
 
 // OpenAI + DeepSeek via Azure OpenAI SDK (cognitiveservices.azure.com)
 const azureClient = new AzureOpenAI({
@@ -37,25 +29,44 @@ const AZURE_MODELS = new Set([
 
 const ALL_MODELS = new Set([...CLAUDE_MODELS, ...AZURE_MODELS]);
 
-// Strip any extra fields (e.g. 'model') stored in Cosmos history — APIs only accept role + content
+// Strip any extra stored fields — APIs only accept role + content
 function cleanMessages(messages) {
   return messages.map(({ role, content }) => ({ role, content }));
 }
 
+// Claude via raw fetch — bypasses SDK which injects extra fields into messages
 async function callClaude(model, messages) {
-  const response = await claudeClient.messages.create({
-    model,
-    messages: cleanMessages(messages),
-    max_tokens: 2048,
+  const base = (process.env.AZURE_CLAUDE_ENDPOINT || '').replace(/\/?$/, '');
+  const res = await fetch(`${base}/v1/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'api-key': process.env.AZURE_AI_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model,
+      messages: cleanMessages(messages),
+      max_tokens: 2048,
+    }),
   });
-  return response.content[0].text;
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`${res.status} ${JSON.stringify(err)}`);
+  }
+
+  const data = await res.json();
+  return data.content[0].text;
 }
 
+// GPT-5.x + DeepSeek via Azure OpenAI SDK
+// max_completion_tokens replaces max_tokens for newer GPT models
 async function callAzure(model, messages) {
   const response = await azureClient.chat.completions.create({
     model,
     messages: cleanMessages(messages),
-    max_tokens: 2048,
+    max_completion_tokens: 2048,
   });
   return response.choices[0].message.content;
 }
