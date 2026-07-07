@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { AzureOpenAI } from 'openai';
-import { getConversation, saveConversation } from '../db/cosmos.js';
+import { getConversationById, upsertConversation } from '../db/cosmos.js';
 
 const router = Router();
 
 const CONTEXT_WINDOW = 20;
 
-// OpenAI + DeepSeek via Azure OpenAI SDK (cognitiveservices.azure.com)
+// OpenAI + DeepSeek via Azure OpenAI SDK
 const azureClient = new AzureOpenAI({
   endpoint: process.env.AZURE_OPENAI_ENDPOINT,
   apiKey: process.env.AZURE_AI_KEY,
@@ -29,12 +29,16 @@ const AZURE_MODELS = new Set([
 
 const ALL_MODELS = new Set([...CLAUDE_MODELS, ...AZURE_MODELS]);
 
-// Strip any extra stored fields — APIs only accept role + content
 function cleanMessages(messages) {
   return messages.map(({ role, content }) => ({ role, content }));
 }
 
-// Claude via raw fetch — bypasses SDK which injects extra fields into messages
+function makeTitle(text) {
+  const trimmed = text.trim();
+  return trimmed.length > 40 ? trimmed.slice(0, 40) + '…' : trimmed;
+}
+
+// Claude via raw fetch (SDK injects extra fields into messages)
 async function callClaude(model, messages) {
   const base = (process.env.AZURE_CLAUDE_ENDPOINT || '').replace(/\/?$/, '');
   const res = await fetch(`${base}/v1/messages`, {
@@ -44,11 +48,7 @@ async function callClaude(model, messages) {
       'api-key': process.env.AZURE_AI_KEY,
       'anthropic-version': '2023-06-01',
     },
-    body: JSON.stringify({
-      model,
-      messages: cleanMessages(messages),
-      max_tokens: 2048,
-    }),
+    body: JSON.stringify({ model, messages: cleanMessages(messages), max_tokens: 2048 }),
   });
 
   if (!res.ok) {
@@ -60,8 +60,6 @@ async function callClaude(model, messages) {
   return data.content[0].text;
 }
 
-// GPT-5.x + DeepSeek via Azure OpenAI SDK
-// max_completion_tokens replaces max_tokens for newer GPT models
 async function callAzure(model, messages) {
   const response = await azureClient.chat.completions.create({
     model,
@@ -72,10 +70,10 @@ async function callAzure(model, messages) {
 }
 
 router.post('/', async (req, res) => {
-  const { alias, message, model } = req.body;
+  const { alias, conversationId, message, model } = req.body;
 
-  if (!alias || !message || !model) {
-    return res.status(400).json({ error: 'alias, message, and model are required' });
+  if (!alias || !conversationId || !message || !model) {
+    return res.status(400).json({ error: 'alias, conversationId, message, and model are required' });
   }
 
   if (!ALL_MODELS.has(model)) {
@@ -83,7 +81,7 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const conversation = await getConversation(alias);
+    const conversation = await getConversationById(conversationId);
     const history = conversation?.messages || [];
 
     const userMessage = { role: 'user', content: message };
@@ -95,9 +93,23 @@ router.post('/', async (req, res) => {
       : await callAzure(model, contextWindow);
 
     const assistantMessage = { role: 'assistant', content: reply, model };
-    await saveConversation(alias, [...updatedHistory, assistantMessage]);
+    const finalHistory = [...updatedHistory, assistantMessage];
 
-    res.json({ reply, model });
+    // Title: derive from first user message (once) and lock it
+    const title = conversation?.title ?? makeTitle(message);
+    const now = new Date().toISOString();
+
+    await upsertConversation({
+      id: conversationId,
+      alias,
+      title,
+      messages: finalHistory,
+      messageCount: finalHistory.length,
+      createdAt: conversation?.createdAt ?? now,
+      updatedAt: now,
+    });
+
+    res.json({ reply, model, title });
   } catch (err) {
     console.error('Chat error:', err?.message || err);
     res.status(500).json({ error: err?.message || 'Failed to process message' });
