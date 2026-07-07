@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import AnthropicFoundry from '@anthropic-ai/foundry-sdk';
 import { AzureOpenAI } from 'openai';
 import { getConversation, saveConversation } from '../db/cosmos.js';
 
@@ -6,24 +7,53 @@ const router = Router();
 
 const CONTEXT_WINDOW = 20;
 
-// Single client for all models — they all live on the same AIServices resource
-const client = new AzureOpenAI({
-  endpoint: process.env.AZURE_AI_ENDPOINT,
+// Claude via Anthropic Foundry SDK (services.ai.azure.com/anthropic)
+const claudeClient = new AnthropicFoundry({
   apiKey: process.env.AZURE_AI_KEY,
-  apiVersion: process.env.AZURE_AI_API_VERSION || '2025-01-01-preview',
+  baseURL: process.env.AZURE_CLAUDE_ENDPOINT,
+  apiVersion: '2023-06-01',
 });
 
-// Deployment name IS the model key — no mapping needed
-const VALID_MODELS = new Set([
+// OpenAI + DeepSeek via Azure OpenAI SDK (cognitiveservices.azure.com)
+const azureClient = new AzureOpenAI({
+  endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+  apiKey: process.env.AZURE_AI_KEY,
+  apiVersion: '2024-12-01-preview',
+});
+
+const CLAUDE_MODELS = new Set([
   'claude-sonnet-4-6',
   'claude-opus-4-6',
   'claude-haiku-4-5',
+]);
+
+const AZURE_MODELS = new Set([
   'gpt-5.5',
   'gpt-5.4-mini',
   'DeepSeek-V4-Pro',
   'DeepSeek-V3.2',
   'DeepSeek-V4-Flash',
 ]);
+
+const ALL_MODELS = new Set([...CLAUDE_MODELS, ...AZURE_MODELS]);
+
+async function callClaude(model, messages) {
+  const response = await claudeClient.messages.create({
+    model,
+    messages,
+    max_tokens: 2048,
+  });
+  return response.content[0].text;
+}
+
+async function callAzure(model, messages) {
+  const response = await azureClient.chat.completions.create({
+    model,
+    messages,
+    max_tokens: 2048,
+  });
+  return response.choices[0].message.content;
+}
 
 router.post('/', async (req, res) => {
   const { alias, message, model } = req.body;
@@ -32,8 +62,8 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'alias, message, and model are required' });
   }
 
-  if (!VALID_MODELS.has(model)) {
-    return res.status(400).json({ error: `Invalid model. Valid options: ${[...VALID_MODELS].join(', ')}` });
+  if (!ALL_MODELS.has(model)) {
+    return res.status(400).json({ error: `Invalid model. Valid options: ${[...ALL_MODELS].join(', ')}` });
   }
 
   try {
@@ -42,16 +72,12 @@ router.post('/', async (req, res) => {
 
     const userMessage = { role: 'user', content: message };
     const updatedHistory = [...history, userMessage];
-
     const contextWindow = updatedHistory.slice(-CONTEXT_WINDOW);
 
-    const response = await client.chat.completions.create({
-      model,
-      messages: contextWindow,
-      max_tokens: 2048,
-    });
+    const reply = CLAUDE_MODELS.has(model)
+      ? await callClaude(model, contextWindow)
+      : await callAzure(model, contextWindow);
 
-    const reply = response.choices[0].message.content;
     const assistantMessage = { role: 'assistant', content: reply, model };
     await saveConversation(alias, [...updatedHistory, assistantMessage]);
 
