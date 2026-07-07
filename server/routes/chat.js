@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import AnthropicFoundry from '@anthropic-ai/foundry-sdk';
 import { AzureOpenAI } from 'openai';
 import { getConversationById, upsertConversation } from '../db/cosmos.js';
 
@@ -6,18 +7,28 @@ const router = Router();
 
 const CONTEXT_WINDOW = 20;
 
-// All models (Anthropic, OpenAI, DeepSeek) via Azure OpenAI SDK —
-// AIServices resources expose all providers through the OpenAI-compatible path.
+// Claude via Anthropic Foundry SDK — handles auth for services.ai.azure.com/anthropic/
+const claudeClient = new AnthropicFoundry({
+  apiKey: process.env.AZURE_AI_KEY,
+  baseURL: process.env.AZURE_CLAUDE_ENDPOINT,
+  apiVersion: '2023-06-01',
+});
+
+// GPT + DeepSeek via Azure OpenAI SDK — cognitiveservices.azure.com/openai path
 const azureClient = new AzureOpenAI({
   endpoint: process.env.AZURE_OPENAI_ENDPOINT,
   apiKey: process.env.AZURE_AI_KEY,
   apiVersion: '2024-12-01-preview',
 });
 
-const ALL_MODELS = new Set([
+const CLAUDE_MODELS = new Set([
   'claude-sonnet-4-6',
   'claude-opus-4-6',
   'claude-haiku-4-5',
+]);
+
+const ALL_MODELS = new Set([
+  ...CLAUDE_MODELS,
   'gpt-5.5',
   'gpt-5.4-mini',
   'DeepSeek-V4-Pro',
@@ -25,6 +36,7 @@ const ALL_MODELS = new Set([
   'DeepSeek-V4-Flash',
 ]);
 
+// Strip Cosmos-stored fields (model, timestamps) — APIs only accept {role, content}
 function cleanMessages(messages) {
   return messages.map(({ role, content }) => ({ role, content }));
 }
@@ -35,12 +47,25 @@ function makeTitle(text) {
 }
 
 async function callModel(model, messages) {
-  const response = await azureClient.chat.completions.create({
+  const clean = cleanMessages(messages);
+
+  if (CLAUDE_MODELS.has(model)) {
+    // Anthropic Foundry SDK — messages.create, returns content[0].text
+    const res = await claudeClient.messages.create({
+      model,
+      messages: clean,
+      max_tokens: 2048,
+    });
+    return res.content[0].text;
+  }
+
+  // Azure OpenAI SDK — chat.completions, returns choices[0].message.content
+  const res = await azureClient.chat.completions.create({
     model,
-    messages: cleanMessages(messages),
+    messages: clean,
     max_completion_tokens: 2048,
   });
-  return response.choices[0].message.content;
+  return res.choices[0].message.content;
 }
 
 router.post('/', async (req, res) => {

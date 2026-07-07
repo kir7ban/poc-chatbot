@@ -8,6 +8,7 @@
     "build": "cd client && npm install --include=dev && npm run build"
   },
   "dependencies": {
+    "@anthropic-ai/foundry-sdk": "latest",
     "@azure/cosmos": "^4.0.0",
     "express": "^4.19.0",
     "openai": "^4.67.0"
