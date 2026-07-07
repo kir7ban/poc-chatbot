@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
 import MessageInput from './MessageInput.jsx';
 import ConversationList from './ConversationList.jsx';
 import { sendMessage, listConversations, loadConversation } from '../api/chat.js';
@@ -124,7 +125,13 @@ export default function Chat({ alias, onReset }) {
               {msg.role === 'assistant' && (
                 <span className="model-badge">{MODEL_LABELS[msg.model] || msg.model}</span>
               )}
-              <div className="message-content">{msg.content}</div>
+              <div className="message-content">
+                {msg.role === 'assistant' ? (
+                  <ReactMarkdown className="md">{msg.content}</ReactMarkdown>
+                ) : (
+                  msg.content
+                )}
+              </div>
             </div>
           ))}
           {loading && (
