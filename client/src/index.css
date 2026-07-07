@@ -1,14 +1,17 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --bg: #f4f5f6;
+  --bg: #f0f2f4;
   --sidebar-bg: #ffffff;
   --surface: #ffffff;
-  --border: #d8dadf;
+  --border: #e0e2e5;
+  --border-input: #bfc3c8;
   --text: #1a1a1a;
-  --text-muted: #6b7280;
-  --accent: #0096e8;
-  --accent-hover: #007bc0;
+  --text-muted: #71767c;
+  --accent: #007bc0;
+  --accent-hover: #005f96;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
 }
 
 body {
@@ -61,9 +64,10 @@ body {
 }
 
 .bosch-logo svg {
-  width: 36px;
-  height: 36px;
+  height: 1.5rem;
+  width: auto;
   flex-shrink: 0;
+  display: block;
 }
 
 .bosch-app-title {
@@ -107,27 +111,30 @@ body {
 }
 
 .alias-card input {
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
+  padding: 0.625rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-input);
+  background: var(--surface);
   color: var(--text);
   font-size: 1rem;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.alias-card input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 123, 192, 0.15);
 }
 
-.alias-card input:focus { border-color: var(--accent); }
-
 .alias-card button {
-  padding: 0.75rem;
+  padding: 0.625rem 1rem;
   background: var(--accent);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: inherit;
   transition: background 0.15s;
 }
 
@@ -482,12 +489,12 @@ body {
   align-items: center;
   gap: 0.35rem;
   background: none;
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border-input);
   color: var(--text-muted);
-  padding: 0.3rem 0.6rem;
-  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-family: inherit;
   white-space: nowrap;
   transition: all 0.15s;
@@ -497,7 +504,7 @@ body {
 .model-selector-btn:hover { border-color: var(--accent); color: var(--text); }
 
 .message-input {
-  padding: 0.6rem 2rem 1rem;
+  padding: 0.625rem 2rem 1rem;
   display: flex;
   gap: 0.75rem;
   align-items: flex-end;
@@ -505,37 +512,43 @@ body {
 
 .message-input textarea {
   flex: 1;
-  padding: 0.75rem 1rem;
-  border-radius: 10px;
-  border: 1px solid var(--border);
+  padding: 0.625rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border-input);
   background: var(--surface);
   color: var(--text);
-  font-size: 0.925rem;
+  font-size: 1rem;
   line-height: 1.5;
   resize: none;
   outline: none;
   font-family: inherit;
   max-height: 150px;
   overflow-y: auto;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.message-input textarea:focus { border-color: var(--accent); }
+.message-input textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 123, 192, 0.15);
+}
 .message-input textarea:disabled { opacity: 0.6; }
 
-.message-input button {
-  padding: 0.75rem 1.25rem;
+.message-input button[type="submit"] {
+  padding: 0.625rem 1.25rem;
   background: var(--accent);
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: inherit;
   transition: background 0.15s;
   white-space: nowrap;
   flex-shrink: 0;
 }
+.message-input button[type="submit"]:hover:not(:disabled) { background: var(--accent-hover); }
+.message-input button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .message-input button:hover:not(:disabled) { background: var(--accent-hover); }
 .message-input button:disabled { opacity: 0.5; cursor: not-allowed; }
