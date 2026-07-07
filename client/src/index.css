@@ -424,9 +424,80 @@ body {
 .error-dismiss:hover { opacity: 1; }
 
 /* ── Message Input ── */
-.message-input {
-  padding: 1rem 2rem;
+.message-input-wrap {
+  position: relative;
   border-top: 1px solid var(--border);
+}
+
+/* Model dropdown (opens above the input) */
+.model-dropdown {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  min-width: 180px;
+}
+
+.model-dropdown-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.model-dropdown-label {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 0.3rem 0.5rem 0.2rem;
+}
+
+.model-dropdown-item {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text);
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+
+.model-dropdown-item:hover { background: var(--bg); border-color: var(--border); }
+.model-dropdown-item.active { background: var(--bg); border-color: var(--accent); color: var(--accent); }
+
+/* Button showing selected model name */
+.model-selector-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.model-selector-btn:hover { border-color: var(--accent); color: var(--text); }
+
+.message-input {
+  padding: 0.6rem 2rem 1rem;
   display: flex;
   gap: 0.75rem;
   align-items: flex-end;
@@ -493,13 +564,9 @@ body {
   .sidebar-header { flex-direction: row; align-items: center; gap: 0.75rem; }
 
   .conv-list-section { display: none; }
-  .model-picker { display: flex; flex-direction: row; gap: 0.4rem; align-items: center; }
-  .section-label { display: none; }
-  .model-option { margin-bottom: 0; padding: 0.35rem 0.6rem; }
-  .model-name { font-size: 0.78rem; }
-  .model-provider { display: none; }
-
   .messages { padding: 1rem; }
   .message { max-width: 88%; }
-  .message-input { padding: 0.75rem 1rem; }
+  .message-input { padding: 0.5rem 1rem 0.75rem; }
+  .model-dropdown { left: 1rem; }
+  .model-dropdown { flex-direction: column; }
 }

@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import ModelPicker from './ModelPicker.jsx';
 import MessageInput from './MessageInput.jsx';
 import ConversationList from './ConversationList.jsx';
 import { sendMessage, listConversations, loadConversation } from '../api/chat.js';
@@ -111,8 +110,6 @@ export default function Chat({ alias, onReset }) {
           onNew={handleNew}
           loading={convsLoading}
         />
-
-        <ModelPicker model={model} onModelChange={handleModelChange} />
       </aside>
 
       <main className="chat-main">
@@ -146,7 +143,12 @@ export default function Chat({ alias, onReset }) {
           )}
           <div ref={bottomRef} />
         </div>
-        <MessageInput onSend={handleSend} disabled={loading} />
+        <MessageInput
+          onSend={handleSend}
+          disabled={loading}
+          model={model}
+          onModelChange={handleModelChange}
+        />
       </main>
     </div>
   );
